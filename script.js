@@ -37,9 +37,12 @@ class FaceMojiApp {
         this.lastDetections = [];
         this.emotionData = {
             happy: 0,
-            neutral: 0,
+            sad: 0,
+            angry: 0,
+            fearful: 0,
+            disgusted: 0,
             surprised: 0,
-            sad: 0
+            neutral: 0
         };
         
         // DOM elements
@@ -135,6 +138,9 @@ class FaceMojiApp {
             // Status elements
             cameraStatus: document.getElementById('cameraStatus'),
             statusText: document.getElementById('statusText'),
+            emotionStatus: document.getElementById('emotionStatus'),
+            dominantEmoji: document.getElementById('dominantEmoji'),
+            dominantEmotion: document.getElementById('dominantEmotion'),
             faceCount: document.getElementById('faceCount'),
             confidence: document.getElementById('confidence'),
             fpsDisplay: document.getElementById('fpsDisplay'),
@@ -478,18 +484,24 @@ class FaceMojiApp {
         // Reset emotion data
         this.emotionData = {
             happy: 0,
-            neutral: 0,
+            sad: 0,
+            angry: 0,
+            fearful: 0,
+            disgusted: 0,
             surprised: 0,
-            sad: 0
+            neutral: 0
         };
         
         // Aggregate emotions from all faces
         detections.forEach(detection => {
             if (detection.expressions) {
                 this.emotionData.happy += detection.expressions.happy || 0;
-                this.emotionData.neutral += detection.expressions.neutral || 0;
-                this.emotionData.surprised += detection.expressions.surprised || 0;
                 this.emotionData.sad += detection.expressions.sad || 0;
+                this.emotionData.angry += detection.expressions.angry || 0;
+                this.emotionData.fearful += detection.expressions.fearful || 0;
+                this.emotionData.disgusted += detection.expressions.disgusted || 0;
+                this.emotionData.surprised += detection.expressions.surprised || 0;
+                this.emotionData.neutral += detection.expressions.neutral || 0;
             }
         });
         
@@ -508,14 +520,62 @@ class FaceMojiApp {
      * Update emotion UI bars
      */
     updateEmotionUI() {
+        let dominantEmotion = null;
+        let maxValue = 0;
+        
+        // Emotion emojis mapping
+        const emotionEmojis = {
+            happy: '😊',
+            sad: '😢',
+            angry: '😠',
+            fearful: '😨',
+            disgusted: '🤢',
+            surprised: '😲',
+            neutral: '😐'
+        };
+        
         Object.keys(this.emotionData).forEach(emotion => {
             const emotionItem = this.elements.emotionGrid.querySelector(`[data-emotion="${emotion}"]`);
             if (emotionItem) {
                 const fill = emotionItem.querySelector('.emotion-fill');
                 const percentage = Math.round(this.emotionData[emotion] * 100);
+                const percentageSpan = emotionItem.querySelector('.emotion-percentage');
+                
+                // Update bar width and percentage text
                 fill.style.width = `${percentage}%`;
+                percentageSpan.textContent = `${percentage}%`;
+                
+                // Find dominant emotion
+                if (this.emotionData[emotion] > maxValue) {
+                    maxValue = this.emotionData[emotion];
+                    dominantEmotion = emotion;
+                }
+                
+                // Remove active class
+                emotionItem.classList.remove('active');
             }
         });
+        
+        // Update header emotion status
+        if (dominantEmotion && maxValue > 0.2) {
+            const emoji = emotionEmojis[dominantEmotion] || '😐';
+            this.elements.dominantEmoji.textContent = emoji;
+            this.elements.dominantEmotion.textContent = dominantEmotion;
+            this.elements.emotionStatus.classList.add('active');
+            
+            // Highlight dominant emotion in grid if confidence is high enough
+            if (maxValue > 0.3) {
+                const dominantItem = this.elements.emotionGrid.querySelector(`[data-emotion="${dominantEmotion}"]`);
+                if (dominantItem) {
+                    dominantItem.classList.add('active');
+                }
+            }
+        } else {
+            // Default to neutral when no strong emotion detected
+            this.elements.dominantEmoji.textContent = '😐';
+            this.elements.dominantEmotion.textContent = 'Neutral';
+            this.elements.emotionStatus.classList.remove('active');
+        }
     }
 
     /**
@@ -564,14 +624,36 @@ class FaceMojiApp {
                 );
                 
                 if (emotions[topEmotion] > 0.3) {
-                    ctx.fillStyle = 'rgba(99, 102, 241, 0.8)';
-                    ctx.fillRect(x, y + height, width, 25);
+                    // Get emoji for emotion
+                    const emotionEmojis = {
+                        happy: '😊',
+                        sad: '😢',
+                        angry: '😠',
+                        fearful: '😨',
+                        disgusted: '🤢',
+                        surprised: '😲',
+                        neutral: '😐'
+                    };
                     
+                    const emoji = emotionEmojis[topEmotion] || '😐';
+                    
+                    // Draw emotion background
+                    ctx.fillStyle = 'rgba(99, 102, 241, 0.9)';
+                    ctx.fillRect(x, y + height, width, 35);
+                    
+                    // Draw emoji
+                    ctx.font = '20px Arial';
+                    ctx.textAlign = 'left';
+                    ctx.fillText(emoji, x + 5, y + height + 25);
+                    
+                    // Draw emotion text
                     ctx.fillStyle = 'white';
+                    ctx.font = '14px Inter, sans-serif';
+                    ctx.textAlign = 'center';
                     ctx.fillText(
                         `${topEmotion} (${Math.round(emotions[topEmotion] * 100)}%)`,
                         x + width / 2,
-                        y + height + 17
+                        y + height + 25
                     );
                 }
             }

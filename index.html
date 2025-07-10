@@ -39,6 +39,10 @@
                         <i class="fas fa-circle"></i>
                         <span id="statusText">Initializing...</span>
                     </div>
+                    <div class="emotion-status" id="emotionStatus">
+                        <span class="emotion-emoji-large" id="dominantEmoji">😐</span>
+                        <span class="emotion-text" id="dominantEmotion">Neutral</span>
+                    </div>
                 </div>
             </div>
         </header>
@@ -121,35 +125,63 @@
 
                 <!-- Emotion Detection -->
                 <div class="emotion-panel">
-                    <h4>Emotion Detection</h4>
+                    <h4>🎭 Emotion Detection</h4>
                     <div class="emotion-grid" id="emotionGrid">
                         <div class="emotion-item" data-emotion="happy">
-                            <i class="fas fa-smile"></i>
+                            <div class="emotion-emoji">😊</div>
                             <span>Happy</span>
                             <div class="emotion-bar">
                                 <div class="emotion-fill"></div>
                             </div>
-                        </div>
-                        <div class="emotion-item" data-emotion="neutral">
-                            <i class="fas fa-meh"></i>
-                            <span>Neutral</span>
-                            <div class="emotion-bar">
-                                <div class="emotion-fill"></div>
-                            </div>
-                        </div>
-                        <div class="emotion-item" data-emotion="surprised">
-                            <i class="fas fa-surprise"></i>
-                            <span>Surprised</span>
-                            <div class="emotion-bar">
-                                <div class="emotion-fill"></div>
-                            </div>
+                            <span class="emotion-percentage">0%</span>
                         </div>
                         <div class="emotion-item" data-emotion="sad">
-                            <i class="fas fa-frown"></i>
+                            <div class="emotion-emoji">😢</div>
                             <span>Sad</span>
                             <div class="emotion-bar">
                                 <div class="emotion-fill"></div>
                             </div>
+                            <span class="emotion-percentage">0%</span>
+                        </div>
+                        <div class="emotion-item" data-emotion="angry">
+                            <div class="emotion-emoji">😠</div>
+                            <span>Angry</span>
+                            <div class="emotion-bar">
+                                <div class="emotion-fill"></div>
+                            </div>
+                            <span class="emotion-percentage">0%</span>
+                        </div>
+                        <div class="emotion-item" data-emotion="fearful">
+                            <div class="emotion-emoji">😨</div>
+                            <span>Fearful</span>
+                            <div class="emotion-bar">
+                                <div class="emotion-fill"></div>
+                            </div>
+                            <span class="emotion-percentage">0%</span>
+                        </div>
+                        <div class="emotion-item" data-emotion="disgusted">
+                            <div class="emotion-emoji">🤢</div>
+                            <span>Disgusted</span>
+                            <div class="emotion-bar">
+                                <div class="emotion-fill"></div>
+                            </div>
+                            <span class="emotion-percentage">0%</span>
+                        </div>
+                        <div class="emotion-item" data-emotion="surprised">
+                            <div class="emotion-emoji">😲</div>
+                            <span>Surprised</span>
+                            <div class="emotion-bar">
+                                <div class="emotion-fill"></div>
+                            </div>
+                            <span class="emotion-percentage">0%</span>
+                        </div>
+                        <div class="emotion-item" data-emotion="neutral">
+                            <div class="emotion-emoji">😐</div>
+                            <span>Neutral</span>
+                            <div class="emotion-bar">
+                                <div class="emotion-fill"></div>
+                            </div>
+                            <span class="emotion-percentage">0%</span>
                         </div>
                     </div>
                 </div>
