@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FaceMoji Simple Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        #status {
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        .loading { background: #fff3cd; color: #856404; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        video {
+            max-width: 100%;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+        .video-container {
+            position: relative;
+            display: inline-block;
+            margin: 20px 0;
+        }
+        #info {
+            text-align: left;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎥 FaceMoji Simple Test</h1>
+    <div id="status" class="loading">Loading...</div>
+    
+    <div class="video-container">
+        <video id="video" width="640" height="480" autoplay muted playsinline style="display: none;"></video>
+        <canvas id="canvas" width="640" height="480"></canvas>
+    </div>
+    
+    <div id="info"></div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const videoElement = document.getElementById('video');
+        const canvasElement = document.getElementById('canvas');
+        const infoDiv = document.getElementById('info');
+        const ctx = canvasElement.getContext('2d');
+
+        let isLoaded = false;
+        let detectionRunning = false;
+
+        function updateStatus(message, type = 'loading') {
+            statusDiv.textContent = message;
+            statusDiv.className = type;
+            console.log(message);
+        }
+
+        function updateInfo(data) {
+            infoDiv.innerHTML = `
+                <strong>Status Information:</strong><br>
+                Face API Loaded: ${typeof faceapi !== 'undefined'}<br>
+                Camera Active: ${!videoElement.paused && !videoElement.ended}<br>
+                Detection Running: ${detectionRunning}<br>
+                Canvas Size: ${canvasElement.width}x${canvasElement.height}<br>
+                Current Time: ${new Date().toLocaleTimeString()}<br>
+                ${data || ''}
+            `;
+        }
+
+        async function loadFaceAPI() {
+            updateStatus('Loading face-api.js library...');
+            
+            // Wait for face-api.js to be available
+            let attempts = 0;
+            while (typeof faceapi === 'undefined' && attempts < 30) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                attempts++;
+                updateStatus(`Waiting for face-api.js... (${attempts}/30)`);
+            }
+
+            if (typeof faceapi === 'undefined') {
+                throw new Error('face-api.js failed to load');
+            }
+
+            updateStatus('Loading face detection models...');
+            
+            // Try to load just the basic model
+            const modelUrl = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights';
+            
+            try {
+                console.log('Loading TinyFaceDetector from:', modelUrl);
+                await faceapi.nets.tinyFaceDetector.loadFromUri(modelUrl);
+                updateStatus('Basic face detection model loaded!', 'success');
+                return true;
+            } catch (error) {
+                console.error('Model loading failed:', error);
+                throw error;
+            }
+        }
+
+        async function setupCamera() {
+            updateStatus('Setting up camera...');
+            
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480 }
+                });
+                
+                videoElement.srcObject = stream;
+                
+                return new Promise((resolve) => {
+                    videoElement.onloadedmetadata = () => {
+                        videoElement.play();
+                        videoElement.style.display = 'block';
+                        updateStatus('Camera ready!', 'success');
+                        resolve();
+                    };
+                });
+            } catch (error) {
+                throw new Error(`Camera access failed: ${error.message}`);
+            }
+        }
+
+        async function detectFaces() {
+            if (!isLoaded || videoElement.paused || videoElement.ended) {
+                return;
+            }
+
+            try {
+                detectionRunning = true;
+                
+                const detections = await faceapi.detectAllFaces(
+                    videoElement, 
+                    new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 })
+                );
+
+                // Clear canvas
+                ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+                
+                // Draw video frame
+                ctx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+
+                // Draw detections
+                if (detections.length > 0) {
+                    detections.forEach((detection, index) => {
+                        const box = detection.box;
+                        
+                        // Draw bounding box
+                        ctx.strokeStyle = '#00ff00';
+                        ctx.lineWidth = 3;
+                        ctx.strokeRect(box.x, box.y, box.width, box.height);
+                        
+                        // Draw label
+                        ctx.fillStyle = '#00ff00';
+                        ctx.font = '16px Arial';
+                        ctx.fillText(`Face ${index + 1}`, box.x, box.y - 10);
+                    });
+                    
+                    updateInfo(`Detected ${detections.length} face(s)`);
+                } else {
+                    updateInfo('No faces detected');
+                }
+
+                detectionRunning = false;
+                
+                // Continue detection
+                requestAnimationFrame(detectFaces);
+                
+            } catch (error) {
+                console.error('Detection error:', error);
+                detectionRunning = false;
+                updateInfo(`Detection error: ${error.message}`);
+                setTimeout(detectFaces, 1000); // Retry after 1 second
+            }
+        }
+
+        async function init() {
+            try {
+                updateInfo();
+                
+                await loadFaceAPI();
+                await setupCamera();
+                
+                isLoaded = true;
+                updateStatus('Face detection active!', 'success');
+                
+                // Start detection
+                detectFaces();
+                
+            } catch (error) {
+                updateStatus(`Error: ${error.message}`, 'error');
+                updateInfo(`Error details: ${error.stack}`);
+                console.error('Initialization error:', error);
+            }
+        }
+
+        // Start when page loads
+        window.addEventListener('load', init);
+        
+        // Update info periodically
+        setInterval(updateInfo, 2000);
+    </script>
+
+    <!-- Load face-api.js -->
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+</body>
+</html>

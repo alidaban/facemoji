@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FaceMoji - Real-time Face Detection</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <div class="logo-animation">
+                <i class="fas fa-camera"></i>
+            </div>
+            <h2>Initializing FaceMoji</h2>
+            <div class="loading-bar">
+                <div class="loading-progress" id="loadingProgress"></div>
+            </div>
+            <p id="loadingText">Loading face detection models...</p>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="appContainer" class="app-container hidden">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-camera"></i>
+                    <h1>FaceMoji</h1>
+                </div>
+                <div class="camera-status">
+                    <div class="status-indicator" id="cameraStatus">
+                        <i class="fas fa-circle"></i>
+                        <span id="statusText">Initializing...</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Video Container -->
+            <div class="video-container">
+                <div class="video-frame">
+                    <video id="videoElement" autoplay muted playsinline></video>
+                    <canvas id="overlayCanvas"></canvas>
+                    <div class="video-overlay" id="videoOverlay">
+                        <div class="no-face-message" id="noFaceMessage">
+                            <i class="fas fa-user-slash"></i>
+                            <p>No face detected</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Controls -->
+                <div class="video-controls">
+                    <button id="toggleCamera" class="control-btn primary">
+                        <i class="fas fa-video"></i>
+                        <span>Camera On</span>
+                    </button>
+                    <button id="captureBtn" class="control-btn secondary">
+                        <i class="fas fa-camera"></i>
+                        <span>Capture</span>
+                    </button>
+                    <button id="fullscreenBtn" class="control-btn secondary">
+                        <i class="fas fa-expand"></i>
+                        <span>Fullscreen</span>
+                    </button>
+                    <button id="settingsBtn" class="control-btn secondary">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Status Panel -->
+            <div class="status-panel">
+                <h3>Detection Status</h3>
+                
+                <div class="status-card">
+                    <div class="status-item">
+                        <div class="status-icon faces">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="status-info">
+                            <span class="status-label">Faces Detected</span>
+                            <span class="status-value" id="faceCount">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="status-card">
+                    <div class="status-item">
+                        <div class="status-icon confidence">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="status-info">
+                            <span class="status-label">Confidence</span>
+                            <span class="status-value" id="confidence">0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="status-card">
+                    <div class="status-item">
+                        <div class="status-icon fps">
+                            <i class="fas fa-tachometer-alt"></i>
+                        </div>
+                        <div class="status-info">
+                            <span class="status-label">FPS</span>
+                            <span class="status-value" id="fpsDisplay">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Emotion Detection -->
+                <div class="emotion-panel">
+                    <h4>Emotion Detection</h4>
+                    <div class="emotion-grid" id="emotionGrid">
+                        <div class="emotion-item" data-emotion="happy">
+                            <i class="fas fa-smile"></i>
+                            <span>Happy</span>
+                            <div class="emotion-bar">
+                                <div class="emotion-fill"></div>
+                            </div>
+                        </div>
+                        <div class="emotion-item" data-emotion="neutral">
+                            <i class="fas fa-meh"></i>
+                            <span>Neutral</span>
+                            <div class="emotion-bar">
+                                <div class="emotion-fill"></div>
+                            </div>
+                        </div>
+                        <div class="emotion-item" data-emotion="surprised">
+                            <i class="fas fa-surprise"></i>
+                            <span>Surprised</span>
+                            <div class="emotion-bar">
+                                <div class="emotion-fill"></div>
+                            </div>
+                        </div>
+                        <div class="emotion-item" data-emotion="sad">
+                            <i class="fas fa-frown"></i>
+                            <span>Sad</span>
+                            <div class="emotion-bar">
+                                <div class="emotion-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Settings Modal -->
+        <div id="settingsModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Settings</h3>
+                    <button id="closeSettings" class="close-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="setting-group">
+                        <label for="cameraSelect">Camera Device</label>
+                        <select id="cameraSelect" class="setting-select">
+                            <option value="">Loading cameras...</option>
+                        </select>
+                    </div>
+                    <div class="setting-group">
+                        <label for="sensitivityRange">Detection Sensitivity</label>
+                        <input type="range" id="sensitivityRange" class="setting-range" min="0.1" max="0.9" step="0.1" value="0.5">
+                        <span class="range-value" id="sensitivityValue">0.5</span>
+                    </div>
+                    <div class="setting-group">
+                        <label for="maxFacesRange">Max Faces to Detect</label>
+                        <input type="range" id="maxFacesRange" class="setting-range" min="1" max="10" step="1" value="5">
+                        <span class="range-value" id="maxFacesValue">5</span>
+                    </div>
+                    <div class="setting-group">
+                        <div class="setting-checkbox">
+                            <input type="checkbox" id="emotionDetection" checked>
+                            <label for="emotionDetection">Enable Emotion Detection</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <p class="privacy-notice">
+                    <i class="fas fa-shield-alt"></i>
+                    Your camera data is processed locally and never leaves your device
+                </p>
+                <p class="credits">
+                    Powered by <strong>face-api.js</strong> | Built with ❤️ for privacy
+                </p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

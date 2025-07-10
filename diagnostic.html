@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FaceMoji Diagnostic</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 FaceMoji Diagnostic Tool</h1>
+    <p>This tool will help identify why FaceMoji is not loading properly.</p>
+
+    <div class="test-section">
+        <h3>📋 System Information</h3>
+        <div id="systemInfo"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>🌐 Network Tests</h3>
+        <button onclick="testNetwork()">Run Network Tests</button>
+        <div id="networkResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>📚 Library Loading Tests</h3>
+        <button onclick="testLibraries()">Test Library Loading</button>
+        <div id="libraryResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>📹 Camera Tests</h3>
+        <button onclick="testCamera()">Test Camera Access</button>
+        <div id="cameraResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>🔧 Browser Console</h3>
+        <p>Check the browser console (F12) for additional error messages:</p>
+        <button onclick="window.open('', '_blank').document.write('<pre>' + JSON.stringify(console, null, 2) + '</pre>')">View Console State</button>
+    </div>
+
+    <script>
+        // System Information
+        function displaySystemInfo() {
+            const info = {
+                'User Agent': navigator.userAgent,
+                'Platform': navigator.platform,
+                'Language': navigator.language,
+                'Online': navigator.onLine,
+                'Cookie Enabled': navigator.cookieEnabled,
+                'Protocol': location.protocol,
+                'Host': location.host,
+                'Current URL': location.href
+            };
+
+            let html = '';
+            for (const [key, value] of Object.entries(info)) {
+                html += `<strong>${key}:</strong> ${value}<br>`;
+            }
+            document.getElementById('systemInfo').innerHTML = html;
+        }
+
+        // Network Tests
+        async function testNetwork() {
+            const results = document.getElementById('networkResults');
+            results.innerHTML = '<div class="info">Testing network connectivity...</div>';
+
+            const tests = [
+                {
+                    name: 'Google DNS',
+                    url: 'https://8.8.8.8/',
+                    method: 'GET'
+                },
+                {
+                    name: 'face-api.js CDN (jsDelivr)',
+                    url: 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js',
+                    method: 'HEAD'
+                },
+                {
+                    name: 'face-api.js Models (jsDelivr)',
+                    url: 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/tiny_face_detector_model-weights_manifest.json',
+                    method: 'HEAD'
+                },
+                {
+                    name: 'face-api.js CDN (unpkg)',
+                    url: 'https://unpkg.com/face-api.js@0.22.2/dist/face-api.min.js',
+                    method: 'HEAD'
+                },
+                {
+                    name: 'Font Awesome CDN',
+                    url: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css',
+                    method: 'HEAD'
+                },
+                {
+                    name: 'Google Fonts',
+                    url: 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
+                    method: 'HEAD'
+                }
+            ];
+
+            let html = '';
+            for (const test of tests) {
+                try {
+                    const startTime = performance.now();
+                    const response = await fetch(test.url, { 
+                        method: test.method,
+                        mode: 'no-cors',
+                        cache: 'no-cache'
+                    });
+                    const endTime = performance.now();
+                    const time = Math.round(endTime - startTime);
+                    
+                    html += `<div class="success">✅ ${test.name}: OK (${time}ms)</div>`;
+                } catch (error) {
+                    html += `<div class="error">❌ ${test.name}: FAILED<br><small>${error.message}</small></div>`;
+                }
+            }
+            results.innerHTML = html;
+        }
+
+        // Library Loading Tests
+        async function testLibraries() {
+            const results = document.getElementById('libraryResults');
+            results.innerHTML = '<div class="info">Testing library loading...</div>';
+
+            const tests = [
+                {
+                    name: 'face-api.js',
+                    check: () => typeof faceapi !== 'undefined',
+                    url: 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js'
+                },
+                {
+                    name: 'MediaDevices API',
+                    check: () => navigator.mediaDevices && navigator.mediaDevices.getUserMedia
+                },
+                {
+                    name: 'Canvas 2D Context',
+                    check: () => document.createElement('canvas').getContext('2d')
+                },
+                {
+                    name: 'RequestAnimationFrame',
+                    check: () => window.requestAnimationFrame
+                },
+                {
+                    name: 'Fetch API',
+                    check: () => window.fetch
+                },
+                {
+                    name: 'Promises',
+                    check: () => window.Promise
+                }
+            ];
+
+            let html = '';
+            for (const test of tests) {
+                try {
+                    const result = test.check();
+                    if (result) {
+                        html += `<div class="success">✅ ${test.name}: Available</div>`;
+                    } else {
+                        html += `<div class="error">❌ ${test.name}: Not Available</div>`;
+                    }
+                } catch (error) {
+                    html += `<div class="error">❌ ${test.name}: Error - ${error.message}</div>`;
+                }
+            }
+
+            // Special test for face-api.js loading
+            if (typeof faceapi === 'undefined') {
+                html += `<div class="warning">⚠️ face-api.js not loaded. Attempting to load...</div>`;
+                
+                try {
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
+                    script.onload = () => {
+                        results.innerHTML = html + `<div class="success">✅ face-api.js loaded successfully!</div>`;
+                    };
+                    script.onerror = () => {
+                        results.innerHTML = html + `<div class="error">❌ Failed to load face-api.js from CDN</div>`;
+                    };
+                    document.head.appendChild(script);
+                } catch (error) {
+                    html += `<div class="error">❌ Error loading face-api.js: ${error.message}</div>`;
+                }
+            }
+
+            results.innerHTML = html;
+        }
+
+        // Camera Tests
+        async function testCamera() {
+            const results = document.getElementById('cameraResults');
+            results.innerHTML = '<div class="info">Testing camera access...</div>';
+
+            try {
+                // Test camera enumeration
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                
+                let html = `<div class="info">Found ${videoDevices.length} video device(s):</div>`;
+                videoDevices.forEach((device, index) => {
+                    html += `<div class="info">📹 Device ${index + 1}: ${device.label || 'Unknown Camera'}</div>`;
+                });
+
+                // Test camera access
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        video: { width: 640, height: 480 }
+                    });
+                    
+                    html += `<div class="success">✅ Camera access granted!</div>`;
+                    html += `<div class="info">Video track: ${stream.getVideoTracks()[0].label}</div>`;
+                    
+                    // Clean up
+                    stream.getTracks().forEach(track => track.stop());
+                } catch (cameraError) {
+                    html += `<div class="error">❌ Camera access denied: ${cameraError.message}</div>`;
+                }
+
+                results.innerHTML = html;
+            } catch (error) {
+                results.innerHTML = `<div class="error">❌ Error testing camera: ${error.message}</div>`;
+            }
+        }
+
+        // Auto-run system info on load
+        document.addEventListener('DOMContentLoaded', () => {
+            displaySystemInfo();
+        });
+    </script>
+
+    <!-- Test loading face-api.js -->
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+</body>
+</html>
